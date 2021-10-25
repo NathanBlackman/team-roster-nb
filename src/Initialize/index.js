@@ -1,37 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import firebase from 'firebase/app';
+// import styled from 'styled-components';
+import { getPlayers } from '../api/data/playerData';
+import 'firebase/auth';
+import PlayerForm from '../components/PlayerForm';
+import Navigation from '../components/Navigation';
+import Routes from '../routes';
+import SignIn from '../views/SignIn';
+
+// const Container = styled.div`
+// width: 60%;
+// margin: auto;
+// padding: 50px 0;
+// h1 {
+//   color: white;
+//   text-align: center;
+//   font-size: 64px;
+//   font-weight: 400;
+// }
+// h3 {
+//   color: lightgrey;
+//   text-align: center;
+// }
+// h4 {
+//   color: lightgrey;
+//   text-transform: uppercase;
+//   font-size: medium;
+// }
+// `;
 
 function Initialize() {
-  const [domWriting, setDomWriting] = useState('Nothing Here!');
+  const [players, setPlayers] = useState([]);
+  const [editItem, setEditItem] = useState({});
+  const [user, setUser] = useState(null);
 
-  const handleClick = (e) => {
-    console.warn(`You clicked ${e.target.id}`);
-    setDomWriting(`You clicked ${e.target.id}! Check the Console!`);
-  };
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged((authed) => {
+      if (authed) {
+        const userInfoObj = {
+          fullName: authed.displayName,
+          profileImage: authed.photoURL,
+          uid: authed.uid,
+          user: authed.email.split('@')[0],
+        };
+        setUser(userInfoObj);
+        getPlayers(false).then(setPlayers);
+      } else if (user || user === null) {
+        setUser(false);
+      }
+    });
+  }, []);
 
   return (
-    <div className="App">
-      <h2>INSIDE APP COMPONENT</h2>
-      <div>
-        <button
-          type="button"
-          id="this-button"
-          className="btn btn-info"
-          onClick={handleClick}
-        >
-          I am THIS button
-        </button>
-      </div>
-      <div>
-        <button
-          type="button"
-          id="that-button"
-          className="btn btn-primary mt-3"
-          onClick={handleClick}
-        >
-          I am THAT button
-        </button>
-      </div>
-      <h3>{domWriting}</h3>
+    <div>
+      {user ? (
+        <>
+          <Navigation />
+          <PlayerForm
+            obj={editItem}
+            setPlayer={setPlayers}
+            setEditItem={setEditItem}
+          />
+          <Routes
+            players={players}
+            setPlayers={setPlayers}
+          />
+        </>
+      ) : (
+        <SignIn user={user} />
+      )}
     </div>
   );
 }
